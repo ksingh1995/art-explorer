@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0d0d0d">
+  <title>Art Through Time</title>
+  <style>
+    :root {
+      --accent: #C9A84C;
+      --bg: #0d0d0d;
+      --card: #1a1a1a;
+      --text: #f0f0f0;
+      --muted: #888;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: 'Georgia', serif; }
+
+    /* ── SPLASH ── */
+    #splash {
+      position: fixed; inset: 0; background: #0d0d0d;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      z-index: 100; transition: opacity 0.6s ease;
+    }
+    #splash .logo { font-size: 4rem; margin-bottom: 1rem; animation: float 3s ease-in-out infinite; }
+    #splash h1 { font-size: 2rem; letter-spacing: 0.15em; color: #C9A84C; text-align: center; }
+    #splash p { color: #888; margin: 0.5rem 0 2.5rem; letter-spacing: 0.08em; font-size: 0.9rem; }
+    #splash .start-btn {
+      background: #C9A84C; color: #0d0d0d; border: none;
+      padding: 1rem 3rem; border-radius: 50px; font-size: 1rem;
+      font-family: inherit; font-weight: bold; letter-spacing: 0.1em;
+      cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 0 30px rgba(201,168,76,0.4);
+    }
+    #splash .start-btn:active { transform: scale(0.96); }
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+
+    /* ── MAIN APP ── */
+    #app { height: 100vh; display: flex; flex-direction: column; opacity: 0; transition: opacity 0.6s ease; }
+    #app.visible { opacity: 1; }
+
+    /* ── TOP NAV (art movement tabs) ── */
+    #movement-nav {
+      display: flex; overflow-x: auto; padding: 0.75rem 1rem 0;
+      gap: 0.6rem; scrollbar-width: none; flex-shrink: 0;
+      border-bottom: 1px solid #1e1e1e;
+    }
+    #movement-nav::-webkit-scrollbar { display: none; }
+    .mv-tab {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 0.2rem; cursor: pointer; padding: 0.4rem 0.8rem 0.6rem;
+      border-radius: 12px 12px 0 0; flex-shrink: 0;
+      transition: background 0.2s; border-bottom: 3px solid transparent;
+    }
+    .mv-tab.active { border-bottom-color: var(--accent); }
+    .mv-tab .mv-emoji { font-size: 1.4rem; }
+    .mv-tab .mv-name { font-size: 0.6rem; color: var(--muted); letter-spacing: 0.05em; white-space: nowrap; }
+    .mv-tab.active .mv-name { color: var(--accent); }
+
+    /* ── CONTENT AREA ── */
+    #content { flex: 1; overflow-y: auto; scrollbar-width: none; padding-bottom: 5rem; }
+    #content::-webkit-scrollbar { display: none; }
+
+    /* ── MOVEMENT HERO ── */
+    .mv-hero {
+      padding: 1.5rem 1.2rem 1rem;
+      border-bottom: 1px solid #1e1e1e;
+    }
+    .mv-period {
+      font-size: 0.7rem; letter-spacing: 0.15em; color: var(--accent);
+      text-transform: uppercase; margin-bottom: 0.3rem;
+    }
+    .mv-title { font-size: 1.8rem; margin-bottom: 0.6rem; }
+    .mv-desc { font-size: 0.88rem; line-height: 1.65; color: #ccc; margin-bottom: 1rem; }
+    .mv-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+    .mv-tag {
+      font-size: 0.68rem; padding: 0.25rem 0.7rem; border-radius: 20px;
+      border: 1px solid var(--accent); color: var(--accent); letter-spacing: 0.05em;
+    }
+
+    /* ── FUN FACT BANNER ── */
+    .fun-fact {
+      margin: 1rem 1.2rem; padding: 1rem 1rem 1rem 1.2rem;
+      background: #1a1a1a; border-radius: 12px;
+      border-left: 3px solid var(--accent);
+      font-size: 0.82rem; color: #bbb; line-height: 1.6;
+    }
+    .fun-fact strong { color: var(--accent); display: block; margin-bottom: 0.3rem; font-size: 0.75rem; letter-spacing: 0.1em; }
+
+    /* ── PAINTINGS SECTION ── */
+    .paintings-heading {
+      padding: 1rem 1.2rem 0.6rem;
+      font-size: 0.75rem; letter-spacing: 0.12em; color: var(--muted);
+      text-transform: uppercase;
+    }
+    .paintings-scroll {
+      display: flex; overflow-x: auto; gap: 1rem;
+      padding: 0 1.2rem 1rem; scrollbar-width: none;
+      scroll-snap-type: x mandatory;
+    }
+    .paintings-scroll::-webkit-scrollbar { display: none; }
+    .painting-card {
+      flex-shrink: 0; width: 72vw; max-width: 300px;
+      background: var(--card); border-radius: 16px; overflow: hidden;
+      cursor: pointer; scroll-snap-align: start;
+      transition: transform 0.2s; border: 1px solid #2a2a2a;
+    }
+    .painting-card:active { transform: scale(0.97); }
+    .painting-card img {
+      width: 100%; height: 220px; object-fit: cover; display: block;
+      background: #222;
+    }
+    .painting-info { padding: 0.9rem 1rem; }
+    .painting-name { font-size: 1rem; margin-bottom: 0.2rem; }
+    .painting-artist { font-size: 0.78rem; color: var(--accent); margin-bottom: 0.15rem; }
+    .painting-year { font-size: 0.72rem; color: var(--muted); }
+    .painting-tap-hint { font-size: 0.68rem; color: #555; margin-top: 0.5rem; }
+
+    /* ── PAINTING MODAL ── */
+    #modal {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.95);
+      z-index: 50; display: none; flex-direction: column;
+      overflow-y: auto;
+    }
+    #modal.open { display: flex; }
+    .modal-close {
+      position: sticky; top: 0; z-index: 10;
+      display: flex; justify-content: flex-end; padding: 1rem;
+      background: linear-gradient(rgba(0,0,0,0.8), transparent);
+    }
+    .modal-close button {
+      background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+      color: #fff; width: 40px; height: 40px; border-radius: 50%;
+      font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    }
+    .modal-img-wrap { display: flex; justify-content: center; padding: 0 1rem; margin-top: -3rem; }
+    .modal-img-wrap img { max-width: 100%; max-height: 55vh; object-fit: contain; border-radius: 8px; }
+    .modal-body { padding: 1.5rem 1.2rem 3rem; }
+    .modal-title { font-size: 1.6rem; margin-bottom: 0.3rem; }
+    .modal-artist { color: var(--accent); font-size: 0.9rem; margin-bottom: 0.2rem; }
+    .modal-meta { color: var(--muted); font-size: 0.78rem; margin-bottom: 1.2rem; }
+    .modal-desc { font-size: 0.9rem; line-height: 1.7; color: #ccc; margin-bottom: 1.2rem; }
+    .modal-fact {
+      background: #1a1a1a; border-radius: 12px; padding: 1rem;
+      border-left: 3px solid var(--accent);
+    }
+    .modal-fact strong { display: block; color: var(--accent); font-size: 0.72rem; letter-spacing: 0.1em; margin-bottom: 0.4rem; }
+    .modal-fact p { font-size: 0.83rem; color: #bbb; line-height: 1.6; }
+
+    /* ── BOTTOM NAV ── */
+    #bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: rgba(13,13,13,0.95); backdrop-filter: blur(10px);
+      display: flex; border-top: 1px solid #1e1e1e;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .bn-btn {
+      flex: 1; display: flex; flex-direction: column; align-items: center;
+      padding: 0.7rem 0.5rem; cursor: pointer; gap: 0.2rem;
+      transition: opacity 0.2s; border: none; background: none; color: var(--muted);
+    }
+    .bn-btn.active { color: var(--accent); }
+    .bn-btn .bn-icon { font-size: 1.3rem; }
+    .bn-btn .bn-label { font-size: 0.6rem; letter-spacing: 0.06em; }
+
+    /* ── TIMELINE VIEW ── */
+    #timeline-view { display: none; padding: 1.5rem 1.2rem 6rem; }
+    #timeline-view.active { display: block; }
+    #timeline-view h2 { font-size: 1.4rem; margin-bottom: 1.5rem; color: var(--accent); }
+    .tl-item {
+      display: flex; gap: 1rem; margin-bottom: 1.5rem; cursor: pointer;
+    }
+    .tl-left { display: flex; flex-direction: column; align-items: center; width: 60px; flex-shrink: 0; }
+    .tl-dot { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
+    .tl-line { width: 2px; flex: 1; background: #222; margin-top: 4px; min-height: 40px; }
+    .tl-right { padding-top: 0.4rem; }
+    .tl-period { font-size: 0.68rem; color: var(--muted); letter-spacing: 0.1em; margin-bottom: 0.2rem; }
+    .tl-name { font-size: 1rem; margin-bottom: 0.3rem; }
+    .tl-snippet { font-size: 0.78rem; color: #999; line-height: 1.5; }
+
+    /* ── QUIZ VIEW ── */
+    #quiz-view { display: none; padding: 1.5rem 1.2rem 6rem; }
+    #quiz-view.active { display: block; }
+    #quiz-view h2 { font-size: 1.4rem; margin-bottom: 0.3rem; color: var(--accent); }
+    .quiz-sub { font-size: 0.82rem; color: var(--muted); margin-bottom: 1.5rem; }
+    .quiz-progress { height: 4px; background: #222; border-radius: 2px; margin-bottom: 1.5rem; }
+    .quiz-progress-fill { height: 100%; border-radius: 2px; background: var(--accent); transition: width 0.4s ease; }
+    .quiz-q-num { font-size: 0.7rem; color: var(--muted); letter-spacing: 0.1em; margin-bottom: 0.6rem; }
+    .quiz-question { font-size: 1.05rem; line-height: 1.55; margin-bottom: 1.5rem; }
+    .quiz-options { display: flex; flex-direction: column; gap: 0.75rem; }
+    .quiz-option {
+      padding: 1rem 1.2rem; background: #1a1a1a; border-radius: 12px;
+      border: 1.5px solid #2a2a2a; cursor: pointer; font-size: 0.9rem;
+      font-family: inherit; color: var(--text); text-align: left;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .quiz-option:active { transform: scale(0.98); }
+    .quiz-option.correct { border-color: #00b894; background: rgba(0,184,148,0.1); color: #00b894; }
+    .quiz-option.wrong { border-color: #e17055; background: rgba(225,112,85,0.1); color: #e17055; }
+    .quiz-option.disabled { pointer-events: none; }
+    .quiz-next {
+      margin-top: 1.5rem; width: 100%; padding: 1rem;
+      background: var(--accent); color: #0d0d0d; border: none;
+      border-radius: 12px; font-size: 1rem; font-family: inherit; font-weight: bold;
+      cursor: pointer; display: none;
+    }
+    .quiz-next.visible { display: block; }
+    /* Results */
+    #quiz-results { text-align: center; padding: 2rem 0; display: none; }
+    #quiz-results.visible { display: block; }
+    .result-emoji { font-size: 4rem; margin-bottom: 1rem; }
+    .result-score { font-size: 2.5rem; color: var(--accent); margin-bottom: 0.5rem; }
+    .result-msg { font-size: 1rem; color: #ccc; margin-bottom: 2rem; line-height: 1.6; }
+    .result-retry {
+      padding: 1rem 2.5rem; background: var(--accent); color: #0d0d0d;
+      border: none; border-radius: 50px; font-size: 1rem;
+      font-family: inherit; font-weight: bold; cursor: pointer;
+    }
+
+    /* ── PAGE WRAPPER ── */
+    #explorer-view { display: flex; flex-direction: column; height: 100%; }
+    #explorer-view.hidden { display: none; }
+
+    /* Smooth section transitions */
+    .page { animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="splash">
+  <div class="logo">🎨</div>
+  <h1>ART THROUGH TIME</h1>
+  <p>Explore 600 years of painting</p>
+  <button class="start-btn" onclick="startApp()">BEGIN EXPLORING</button>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+
+  <!-- Explorer View -->
+  <div id="explorer-view">
+    <!-- Movement Tabs -->
+    <div id="movement-nav"></div>
+    <!-- Content -->
+    <div id="content"></div>
+  </div>
+
+  <!-- Timeline View -->
+  <div id="timeline-view" class="page"></div>
+
+  <!-- Quiz View -->
+  <div id="quiz-view" class="page"></div>
+
+  <!-- Bottom Nav -->
+  <nav id="bottom-nav">
+    <button class="bn-btn active" onclick="switchTab('explorer')">
+      <span class="bn-icon">🖼️</span><span class="bn-label">EXPLORE</span>
+    </button>
+    <button class="bn-btn" onclick="switchTab('timeline')">
+      <span class="bn-icon">📅</span><span class="bn-label">TIMELINE</span>
+    </button>
+    <button class="bn-btn" onclick="switchTab('quiz')">
+      <span class="bn-icon">🧠</span><span class="bn-label">QUIZ</span>
+    </button>
+  </nav>
+</div>
+
+<!-- Painting Modal -->
+<div id="modal">
+  <div class="modal-close">
+    <button onclick="closeModal()">✕</button>
+  </div>
+  <div class="modal-img-wrap"><img id="modal-img" src="" alt=""></div>
+  <div class="modal-body">
+    <div class="modal-title" id="modal-title"></div>
+    <div class="modal-artist" id="modal-artist"></div>
+    <div class="modal-meta" id="modal-meta"></div>
+    <div class="modal-desc" id="modal-desc"></div>
+    <div class="modal-fact">
+      <strong>🔍 DID YOU KNOW?</strong>
+      <p id="modal-fact"></p>
+    </div>
+  </div>
+</div>
+
+<script>
+const movements = [
+  {
+    id: 'renaissance',
+    name: 'Renaissance',
+    period: '1400s – 1600s',
+    emoji: '🏛️',
+    color: '#C9A84C',
+    description: 'Born in Florence, Italy, the Renaissance was a "rebirth" of classical learning. Artists mastered perspective, anatomy, and chiaroscuro (light/dark contrast) to create lifelike, three-dimensional images for the first time.',
+    characteristics: ['Linear Perspective', 'Human Anatomy', 'Sfumato Shading', 'Classical Mythology', 'Naturalism'],
+    funFact: 'Leonardo da Vinci was left-handed and wrote his notebooks in mirror script — right to left — so you needed a mirror to read them. He filled over 13,000 pages with drawings and ideas.',
+    paintings: [
+      {
+        title: 'Mona Lisa',
+        artist: 'Leonardo da Vinci',
+        year: 'c. 1503–1519',
+        location: 'Louvre Museum, Paris',
+        image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg/402px-Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg',
+        description: 'The world\'s most famous painting. The subject\'s mysterious smile is achieved through sfumato — a technique of blurring edges so the smile seems to shift depending on where you look.',
+        fact: 'The Mona Lisa is surprisingly small — only 30×21 inches. It sits behind bulletproof glass and about 6 million people visit it annually. It was stolen from the Louvre in 1911 and missing for 2 years.'
+      },
+      {
+        title: 'The Birth of Venus',
+        artist: 'Sandro Botticelli',
+        year: 'c. 1484–1486',
+        location: 'Uffizi Gallery, Florence',
+        image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/26/Sandro_Botticelli_-_La_nascita_di_Venere_-_Google_Art_Project_-_edited.jpg/1000px-Sandro_Botticelli_-_La_nascita_di_Venere_-_Google_Art_Project_-_edited.jpg',
+        description: 'Venus, goddess of love and beauty, rises from the sea on a giant shell. The flowing, rhythmic lines and dreamlike atmosphere make it one of the most recognisable Renaissance works.',
+        fact: 'Botticelli was so devoted to religious reformer Savonarola that he reportedly burned some of his own paintings. The model for Venus is thought to be Simonetta Vespucci, a woman loved by the Medici family.'
+      },
+      {
+        title: 'The Creation of Adam',
+        artist: 'Michelangelo',
+        year: '1508–1512',
+        location: 'Sistine Chapel, Vatican City',
+        image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Michelangelo_-_Creation_of_Adam_%28cropped%29.jpg/1280px-Michelangelo_-_Creation_of_Adam_%28cropped%29.jpg',
+        description: 'Part of the Sistine Chapel ceiling. God reaches out to give life to Adam — the near-touch between two fingers is one of the most powerful moments in art history.',
+        fact: 'Michelangelo painted the entire 5,000 sq ft Sistine Chapel ceiling while lying on scaffolding, sometimes painting overhead. It took 4 years. He was so exhausted he couldn\'t read without tilting his head backward for months after.'
+      }
+    ]
+  },
+  {
+    id: 'baroque',
+    name: 'Baroque',
+    period: '1600s – 1750s',
+    emoji: '🕯️',
+    color: '#E07B39',
+    description: 'Baroque art is dramatic, intense, and theatrical. It uses extreme contrasts of light and shadow (chiaroscuro) to create emotional impact. Born partly from the Catholic Counter-Reformation, it aimed to move viewers deeply.',
+    characteristics: ['Dramatic Lighting', 'Intense Emotion', 'Dynamic Movement', 'Rich Detail', 'Tenebrism'],
+    funFact: 'Caravaggio, the master of dramatic lighting, was also a murderer who fled Rome after killing a man in a brawl. He spent the rest of his life on the run, painting masterpieces wherever he went.',
+    paintings: [
+      {
+        title: 'Girl with a Pearl Earring',
+        artist: 'Johannes Vermeer',
+        year: 'c. 1665',
+        location: 'Mauritshuis, The Hague',
+        image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/1665_Girl_with_a_Pearl_Earring.jpg/399px-1665_Girl_with_a_Pearl_Earring.jpg',
+        description: 'Often called the "Mona Lisa of the North." The girl looks over her shoulder with parted lips and a gaze of intimate directness. The large pearl earring catches the light with extraordinary skill.',
+        fact: 'The pearl earring may actually be glass — the reflection pattern suggests it\'s hollow, not solid pearl. Vermeer used a camera obscura (a darkened box with a lens) to project scenes and trace outlines.'
+      },
+      {
+        title: 'The Night Watch',
+        artist: 'Rembrandt van Rijn',
+        year: '1642',
+        location: 'Rijksmuseum, Amsterdam',
+        image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/The_Night_Watch_-_HD.jpg/1280px-The_Night_Watch_-_HD.jpg',
+        description: 'A militia company marching out with extraordinary energy and movement. Rembrandt broke convention by showing the group in action rather than as a static portrait.',
+        fact: 'The Night Watch was cut down in 1715 to fit a smaller doorway — several figures on the left side were simply removed. The original cut-off parts are known only from a small early copy.'
+      },
+      {
+        title: 'Self-Portrait with Two Circles',
+        artist: 'Rembrandt van Rijn',
+        year: 'c. 1665–1669',
+        location: 'Kenwood House, London',
+        image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bd/Rembrandt_van_Rijn_-_Self-Portrait_with_Two_Circles_c1665-9.jpg/755px-Rembrandt_van_Rijn_-_Self-Portrait_with_Two_Circles_c1665-9.jpg',
+        description: 'One of Rembrandt\'s last self-portraits, painted near the end of his life. The aged face is rendered with brutal honesty — no flattery, just deep humanity.',
+        fact: 'Rembrandt painted nearly 100 self-portraits over his lifetime — more than any artist before him. They\'re considered a visual autobiography tracking his journey from successful young artist to bankrupt old man.'
+      }
+    ]
+  },
+  {
+    id: 'impressionism',
+    name: 'Impressionism',
+    period: '1860s – 1900s',
+    emoji: '🌸',
+    color: '#74B9FF',
+    description: 'Impressionists rebelled against formal academic painting by painting outdoors (en plein air), capturing light and atmosphere in quick, loose brushstrokes. Their name came from a critic\'s insult about Monet\'s painting "Impression, Sunrise."',
+    characteristics: ['Loose Brushwork', 'Natural Light', 'Outdoor Scenes', 'Colour over Line', 'Momentary Effects'],
+    funFact: 'When the Impressionists first exhibited in 1874, critics hated them. One wrote "wallpaper in its embryonic state is more finished." Today Monet\'s paintings sell for $100+ million.',
+    paintings: [
+      {
+        title: 'Water Lilies',
+        artist: 'Claude Monet',
+        year: '1906',
+        location: 'Art Institute of Chicago',
+        image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/aa/Claude_Monet_-_Water_Lilies_-_1906%2C_Ryerson.jpg/1280px-Claude_Monet_-_Water_Lilies_-_1906%2C_Ryerson.jpg',
+        description: 'Monet created over 250 paintings of the water lily pond at his garden in Giverny. These shimmering canvases blur the boundary between surface and reflection.',
+        fact: 'In his final years, Monet had cataracts and could barely see. His late Water Lilies were painted almost blind — the reds and oranges he added were actually blues and purples he couldn\'t distinguish anymore.'
+      },
+      {
+        title: 'Dance at Le Moulin de la Galette',
+        artist: 'Pierre-Auguste Renoir',
+        year: '1876',
+        location: 'Musée d\'Orsay, Paris',
+        image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Auguste_Renoir_-_Dance_at_Le_Moulin_de_la_Galette_-_Mus%C3%A9e_d%27Orsay_RF_2739_%281876%29.jpg/800px-Auguste_Renoir_-_Dance_at_Le_Moulin_de_la_Galette_-_Mus%C3%A9e_d%27Orsay_RF_2739_%281876%29.jpg',
+        description: 'Sunday afternoon dancers in a Montmartre park, dappled with sunlight through the leaves. Renoir captures joy, movement, and the play of light on faces and clothes.',
+        fact: 'All the models were Renoir\'s real friends — he painted the scene outdoors over several months, asking them to come back in their best clothes to pose.'
+      },
+      {
+        title: 'L\'Étoile (The Star)',
+        artist: 'Edgar Degas',
+        year: 'c. 1876–1878',
+        location: 'Musée d\'Orsay, Paris',
+        image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/L%27Etoile_-_ballet_dancer_on_stage_by_Degas.jpg/800px-L%27Etoile_-_ballet_dancer_on_stage_by_Degas.jpg',
+        description: 'A ballerina takes a bow, painted from a high angle as if from a theatre box. Degas was obsessed with capturing movement — particularly the world of ballet.',
+        fact: 'Degas made over 1,500 works about dance. He wasn\'t a great admirer of ballet itself — he was fascinated by movement and the hard physical labour behind the glamour.'
+      }
+    ]
+  },
+  {
+    id: 'post-impressionism',
+    name: 'Post-Impressionism',
+    period: '1880s – 1910s',
+    emoji: '⭐',
+    color: '#FDCB6E',
+    description: 'Post-Impressionists used Impressionism\'s loose style as a starting point but pushed further — adding emotional depth, structure, and symbolic meaning. Each artist developed a distinct personal vision.',
+    characteristics: ['Personal Expression', 'Bold Colour', 'Visible Brushwork', 'Emotional Intensity', 'Symbolic Meaning'],
+    funFact: 'Van Gogh sold only ONE painting in his entire lifetime — "The Red Vineyard" for 400 francs (about $2,000 today). His paintings now sell for $100–300 million each.',
+    paintings: [
+      {
+        title: 'The Starry Night',
+        artist: 'Vincent van Gogh',
+        year: '1889',
+        location: 'MoMA, New York',
+        image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg/1280px-Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg',
+        description: 'Swirling skies over a sleeping village. Van Gogh painted this from memory while a voluntary patient at an asylum in Saint-Rémy. The turbulent sky mirrors his emotional state.',
+        fact: 'Research has shown that Van Gogh\'s swirling patterns in The Starry Night actually match the mathematical patterns of turbulent fluid flow — a concept not formally described until decades later.'
+      },
+      {
+        title: 'The Card Players',
+        artist: 'Paul Cézanne',
+        year: 'c. 1894–1895',
+        location: 'Metropolitan Museum of Art, NY',
+        image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Cézanne_-_The_Card_Players_%28Metropolitan_Museum_of_Art%29.jpg/800px-Cézanne_-_The_Card_Players_%28Metropolitan_Museum_of_Art%29.jpg',
+        description: 'Two peasants absorbed in a card game. Cézanne stripped away sentiment to find the geometric structure beneath natural forms — a direct influence on Cubism.',
+        fact: 'One version of The Card Players sold for $259 million in 2011 — to the Royal Family of Qatar. Cézanne painted 5 versions of this composition over several years.'
+      },
+      {
+        title: 'Where Do We Come From?',
+        artist: 'Paul Gauguin',
+        year: '1897–1898',
+        location: 'Museum of Fine Arts, Boston',
+        image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/39/Paul_Gauguin_-_D%27o%C3%B9_venons-nous_%3F_Que_sommes-nous_%3F_O%C3%B9_allons-nous_%3F.jpg/1280px-Paul_Gauguin_-_D%27o%C3%B9_venons-nous_%3F_Que_sommes-nous_%3F_O%C3%B9_allons-nous_%3F.jpg',
+        description: 'A 12-foot wide painting depicting the cycle of life — from birth on the right to old age and death on the left. Gauguin considered it his masterpiece.',
+        fact: 'Gauguin painted this after his daughter died, intending it as his final work before suicide. He wrote the title questions at the top left: "Where do we come from? What are we? Where are we going?"'
+      }
+    ]
+  },
+  {
+    id: 'surrealism',
+    name: 'Surrealism',
+    period: '1920s – 1950s',
+    emoji: '💭',
+    color: '#A29BFE',
+    description: 'Surrealists explored dreams, the unconscious mind, and irrational imagery. Influenced by Freud\'s psychoanalysis, they created worlds where anything was possible — melting clocks, floating rocks, impossible juxtapositions.',
+    characteristics: ['Dream Logic', 'Unconscious Mind', 'Unexpected Juxtaposition', 'Photographic Realism', 'Bizarre Imagery'],
+    funFact: 'Salvador Dalí was so eccentric he once arrived at a lecture wearing a deep-sea diving suit. He said it represented "the depths of the subconscious." He nearly suffocated and had to be opened with a spanner.',
+    paintings: [
+      {
+        title: 'The Persistence of Memory',
+        artist: 'Salvador Dalí',
+        year: '1931',
+        location: 'MoMA, New York',
+        image: 'https://upload.wikimedia.org/wikipedia/en/d/dd/The_Persistence_of_Memory.jpg',
+        description: 'Melting watches draped over a barren landscape. Dalí said the image came to him suddenly while eating Camembert cheese. The soft watches represent the fluidity of time in dreams.',
+        fact: 'Like the Mona Lisa, this is shockingly small — just 9.5×13 inches, about the size of a laptop screen. Dalí painted the melting clocks in just a few hours one afternoon.'
+      },
+      {
+        title: 'The Son of Man',
+        artist: 'René Magritte',
+        year: '1964',
+        location: 'Private collection',
+        image: 'https://upload.wikimedia.org/wikipedia/en/e/e9/Magritte_TheSonOfMan.jpg',
+        description: 'A businessman in a bowler hat with a green apple floating before his face. Magritte called it a self-portrait — the apple hides his face just as public identity hides private truth.',
+        fact: 'Magritte painted this as his own self-portrait. He said: "Everything we see hides another thing, we always want to see what is hidden by what we see." The painting has since been endlessly parodied in pop culture.'
+      },
+      {
+        title: 'The Two Fridas',
+        artist: 'Frida Kahlo',
+        year: '1939',
+        location: 'Museo de Arte Moderno, Mexico City',
+        image: 'https://upload.wikimedia.org/wikipedia/en/1/1e/Frida_Kahlo_%28self_portrait%29.jpg',
+        description: 'Two versions of Frida sit side by side — one with a broken heart exposed, connected by an artery to the other. Painted during her divorce from Diego Rivera.',
+        fact: 'Frida Kahlo suffered a devastating bus accident at 18 that left her bedridden for months. She started painting self-portraits because her mother fixed a mirror above her bed. She endured 35 surgeries in her lifetime.'
+      }
+    ]
+  },
+  {
+    id: 'abstract',
+    name: 'Abstract',
+    period: '1910s – Present',
+    emoji: '🔴',
+    color: '#FF6B6B',
+    description: 'Abstract art abandons realistic depiction entirely. Instead of painting what things look like, artists express ideas, emotions, or pure formal relationships through shape, colour, line, and texture.',
+    characteristics: ['Non-Representational', 'Emotional Expression', 'Pure Form & Colour', 'Gestural Marks', 'Visual Music'],
+    funFact: 'Jackson Pollock\'s "No. 5, 1948" sold for $140 million in 2006. Critics once mocked his drip paintings as something a child could do. One gallon of Pollock\'s paint can now sell for thousands of dollars.',
+    paintings: [
+      {
+        title: 'Composition VIII',
+        artist: 'Wassily Kandinsky',
+        year: '1923',
+        location: 'Solomon R. Guggenheim Museum, NY',
+        image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/Kandinsky_-_Komposition_8%2C_Huile_sur_toile%2C_1923%2C_140_cm_%C3%97_201_cm%2C_Guggenheim_Museum.jpg/1280px-Kandinsky_-_Komposition_8%2C_Huile_sur_toile%2C_1923%2C_140_cm_%C3%97_201_cm%2C_Guggenheim_Museum.jpg',
+        description: 'Geometric shapes — circles, lines, triangles — arranged to create visual music. Kandinsky believed colours and shapes had spiritual qualities that could communicate directly to the soul.',
+        fact: 'Kandinsky had synesthesia — he could "see" music as colours and shapes. He said when he heard music, he saw paintings. This directly inspired his abstract style.'
+      },
+      {
+        title: 'No. 61 (Rust and Blue)',
+        artist: 'Mark Rothko',
+        year: '1953',
+        location: 'Los Angeles County Museum of Art',
+        image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Rothko_No_3_No_13.jpg/800px-Rothko_No_3_No_13.jpg',
+        description: 'Soft, luminous rectangles of colour seem to float and glow. Rothko wanted viewers to stand very close — within 18 inches — and have an almost religious experience.',
+        fact: 'Rothko refused to sell his paintings to people he thought wouldn\'t appreciate them. He turned down $35,000 from a restaurant because he didn\'t want his work seen while people ate. He said: "I hope to ruin their appetite."'
+      },
+      {
+        title: 'Lavender Mist: Number 1',
+        artist: 'Jackson Pollock',
+        year: '1950',
+        location: 'National Gallery of Art, Washington DC',
+        image: 'https://upload.wikimedia.org/wikipedia/en/4/47/Pollock_No_1.jpg',
+        description: 'Pollock placed canvases on the floor and poured, dripped, and flicked paint from above — dancing around and sometimes through the canvas. The result is a web of pure gesture and energy.',
+        fact: 'Pollock said "I don\'t work from drawings or colour sketches. I want to express my feelings rather than illustrate them." Scientists have found his drip patterns match natural fractal patterns found in coastlines and snowflakes.'
+      }
+    ]
+  },
+  {
+    id: 'pop-art',
+    name: 'Pop Art',
+    period: '1950s – 1970s',
+    emoji: '💥',
+    color: '#FD79A8',
+    description: 'Pop artists embraced mass culture — advertising, comic books, celebrities, consumer goods — and elevated everyday images to fine art. It was both a celebration of and commentary on consumer society.',
+    characteristics: ['Bold Flat Colours', 'Commercial Imagery', 'Mass Media References', 'Irony & Humour', 'Repetition'],
+    funFact: 'Andy Warhol said "In the future, everyone will be world-famous for 15 minutes." He mass-produced his own art with assistants in a studio he called The Factory. He once said his biggest influence was advertising.',
+    paintings: [
+      {
+        title: 'Marilyn Diptych',
+        artist: 'Andy Warhol',
+        year: '1962',
+        location: 'Tate Modern, London',
+        image: 'https://upload.wikimedia.org/wikipedia/en/2/2a/Marylin_Monroe_Warhol.jpg',
+        description: 'Fifty silkscreened images of Marilyn Monroe — half in garish colour, half fading into grey. Made just weeks after her death, it questions celebrity, mortality, and mass reproduction.',
+        fact: 'Warhol made this immediately after Marilyn Monroe died in August 1962. The fading grey panels on the right are seen as representing her fading into death and memory.'
+      },
+      {
+        title: 'Whaam!',
+        artist: 'Roy Lichtenstein',
+        year: '1963',
+        location: 'Tate Modern, London',
+        image: 'https://upload.wikimedia.org/wikipedia/en/a/a0/Roy_Lichtenstein_Whaam.jpg',
+        description: 'A fighter jet fires a rocket — "WHAAM!" — straight from a 1960s war comic. Lichtenstein reproduced comic book imagery at massive scale, including the Ben-Day dots of cheap printing.',
+        fact: 'Lichtenstein meticulously reproduced the look of cheap comic printing by painting individual dots by hand using a metal screen as a stencil. His paintings look mechanical but are entirely hand-made.'
+      },
+      {
+        title: 'Campbell\'s Soup Cans',
+        artist: 'Andy Warhol',
+        year: '1962',
+        location: 'MoMA, New York',
+        image: 'https://upload.wikimedia.org/wikipedia/en/3/3e/Andy_Warhol_-_Campbell%27s_Soup_Cans_MoMA.jpg',
+        description: '32 canvases, one for each variety of Campbell\'s soup. Warhol said he ate Campbell\'s soup for lunch every day for 20 years. The work blurred the line between commerce and art.',
+        fact: 'When first exhibited in 1962, a nearby gallery put up real Campbell\'s soup cans in the window with a sign: "Get the real thing for 29 cents." Warhol said he loved it.'
+      }
+    ]
+  }
+];
+
+const quizData = [
+  {
+    q: 'Which art movement is famous for soft, hazy brushstrokes capturing natural light outdoors?',
+    options: ['Baroque', 'Impressionism', 'Surrealism', 'Pop Art'],
+    answer: 1,
+    explanation: 'Impressionists painted en plein air (outdoors) with quick, loose strokes to capture changing light.'
+  },
+  {
+    q: 'Who painted "The Starry Night" in 1889 while staying in an asylum?',
+    options: ['Claude Monet', 'Paul Cézanne', 'Vincent van Gogh', 'Salvador Dalí'],
+    answer: 2,
+    explanation: 'Van Gogh painted The Starry Night from memory while a voluntary patient at Saint-Paul-de-Mausole asylum.'
+  },
+  {
+    q: 'Which movement featured melting clocks and dreamlike, impossible imagery drawn from the unconscious mind?',
+    options: ['Renaissance', 'Abstract', 'Surrealism', 'Baroque'],
+    answer: 2,
+    explanation: 'Surrealism explored dreams and the unconscious, influenced by Freud\'s psychoanalysis.'
+  },
+  {
+    q: 'The Mona Lisa and The Birth of Venus both belong to which period?',
+    options: ['Impressionism', 'Renaissance', 'Pop Art', 'Baroque'],
+    answer: 1,
+    explanation: 'Both are masterpieces of the Renaissance — the "rebirth" of classical art in 15th–16th century Italy.'
+  },
+  {
+    q: 'Which movement used comic book style, bold flat colours, and consumer culture imagery?',
+    options: ['Baroque', 'Post-Impressionism', 'Abstract', 'Pop Art'],
+    answer: 3,
+    explanation: 'Pop Art celebrated mass culture — advertising, comics, and celebrities — as fine art.'
+  },
+  {
+    q: 'Kandinsky had synesthesia — he could see music as shapes and colours. Which movement did this inspire?',
+    options: ['Impressionism', 'Surrealism', 'Abstract', 'Renaissance'],
+    answer: 2,
+    explanation: 'Kandinsky believed colours and shapes had spiritual qualities — a core idea in early Abstract art.'
+  },
+  {
+    q: 'Which Baroque painter was also a murderer who fled Rome after killing a man in a brawl?',
+    options: ['Rembrandt', 'Vermeer', 'Caravaggio', 'Velázquez'],
+    answer: 2,
+    explanation: 'Caravaggio killed Ranuccio Tomassoni in 1606 and fled Rome, painting masterpieces while on the run.'
+  }
+];
+
+// ── STATE ──
+let currentMovement = 0;
+let currentTab = 'explorer';
+let quizIndex = 0;
+let quizScore = 0;
+let quizAnswered = false;
+
+// ── SPLASH ──
+function startApp() {
+  document.getElementById('splash').style.opacity = '0';
+  setTimeout(() => {
+    document.getElementById('splash').style.display = 'none';
+    document.getElementById('app').classList.add('visible');
+  }, 600);
+}
+
+// ── NAVIGATION ──
+function switchTab(tab) {
+  currentTab = tab;
+  document.getElementById('explorer-view').classList.toggle('hidden', tab !== 'explorer');
+  document.getElementById('timeline-view').classList.toggle('active', tab === 'timeline');
+  document.getElementById('quiz-view').classList.toggle('active', tab === 'quiz');
+
+  document.querySelectorAll('.bn-btn').forEach((b, i) => {
+    b.classList.toggle('active', ['explorer','timeline','quiz'][i] === tab);
+  });
+
+  if (tab === 'timeline') renderTimeline();
+  if (tab === 'quiz') renderQuiz();
+}
+
+// ── MOVEMENT TABS ──
+function buildMovementNav() {
+  const nav = document.getElementById('movement-nav');
+  movements.forEach((mv, i) => {
+    const tab = document.createElement('div');
+    tab.className = 'mv-tab' + (i === 0 ? ' active' : '');
+    tab.innerHTML = `<span class="mv-emoji">${mv.emoji}</span><span class="mv-name">${mv.name}</span>`;
+    tab.onclick = () => selectMovement(i);
+    nav.appendChild(tab);
+  });
+}
+
+function selectMovement(index) {
+  currentMovement = index;
+  document.querySelectorAll('.mv-tab').forEach((t, i) => t.classList.toggle('active', i === index));
+  renderMovement();
+
+  // Update accent colour
+  const mv = movements[index];
+  document.documentElement.style.setProperty('--accent', mv.color);
+}
+
+function renderMovement() {
+  const mv = movements[currentMovement];
+  const content = document.getElementById('content');
+  content.innerHTML = `
+    <div class="mv-hero page">
+      <div class="mv-period">${mv.period}</div>
+      <div class="mv-title">${mv.emoji} ${mv.name}</div>
+      <div class="mv-desc">${mv.description}</div>
+      <div class="mv-tags">${mv.characteristics.map(c => `<span class="mv-tag">${c}</span>`).join('')}</div>
+    </div>
+    <div class="fun-fact">
+      <strong>💡 FUN FACT</strong>
+      ${mv.funFact}
+    </div>
+    <div class="paintings-heading">MASTERWORKS</div>
+    <div class="paintings-scroll">
+      ${mv.paintings.map((p, i) => `
+        <div class="painting-card" onclick="openPainting(${currentMovement}, ${i})">
+          <img src="${p.image}" alt="${p.title}" loading="lazy">
+          <div class="painting-info">
+            <div class="painting-name">${p.title}</div>
+            <div class="painting-artist">${p.artist}</div>
+            <div class="painting-year">${p.year}</div>
+            <div class="painting-tap-hint">Tap for details →</div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+  content.scrollTo(0, 0);
+}
+
+// ── PAINTING MODAL ──
+function openPainting(mvIndex, pIndex) {
+  const p = movements[mvIndex].paintings[pIndex];
+  document.getElementById('modal-img').src = p.image;
+  document.getElementById('modal-img').alt = p.title;
+  document.getElementById('modal-title').textContent = p.title;
+  document.getElementById('modal-artist').textContent = p.artist;
+  document.getElementById('modal-meta').textContent = `${p.year} · ${p.location}`;
+  document.getElementById('modal-desc').textContent = p.description;
+  document.getElementById('modal-fact').textContent = p.fact;
+  const modal = document.getElementById('modal');
+  modal.classList.add('open');
+  modal.scrollTo(0, 0);
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+}
+
+// Close modal on background click
+document.getElementById('modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// ── TIMELINE ──
+function renderTimeline() {
+  const tv = document.getElementById('timeline-view');
+  tv.innerHTML = `
+    <h2>🗓️ Art Through Time</h2>
+    ${movements.map((mv, i) => `
+      <div class="tl-item" onclick="switchTab('explorer'); selectMovement(${i})" style="--accent:${mv.color}">
+        <div class="tl-left">
+          <div class="tl-dot" style="background:${mv.color}20; border: 2px solid ${mv.color}">${mv.emoji}</div>
+          ${i < movements.length - 1 ? '<div class="tl-line"></div>' : ''}
+        </div>
+        <div class="tl-right">
+          <div class="tl-period" style="color:${mv.color}">${mv.period}</div>
+          <div class="tl-name">${mv.name}</div>
+          <div class="tl-snippet">${mv.description.substring(0, 90)}…</div>
+        </div>
+      </div>
+    `).join('')}
+  `;
+}
+
+// ── QUIZ ──
+function renderQuiz() {
+  quizIndex = 0;
+  quizScore = 0;
+  const qv = document.getElementById('quiz-view');
+  qv.innerHTML = `
+    <h2>🧠 Art Quiz</h2>
+    <p class="quiz-sub">Test your knowledge — ${quizData.length} questions</p>
+    <div class="quiz-progress"><div class="quiz-progress-fill" id="q-prog" style="width:0%"></div></div>
+    <div id="q-body"></div>
+    <div id="quiz-results" class="page">
+      <div class="result-emoji" id="r-emoji"></div>
+      <div class="result-score" id="r-score"></div>
+      <div class="result-msg" id="r-msg"></div>
+      <button class="result-retry" onclick="renderQuiz()">Try Again</button>
+    </div>
+  `;
+  showQuestion();
+}
+
+function showQuestion() {
+  const q = quizData[quizIndex];
+  quizAnswered = false;
+  document.getElementById('q-prog').style.width = `${(quizIndex / quizData.length) * 100}%`;
+  document.getElementById('q-body').innerHTML = `
+    <div class="quiz-q-num">QUESTION ${quizIndex + 1} OF ${quizData.length}</div>
+    <div class="quiz-question">${q.q}</div>
+    <div class="quiz-options">
+      ${q.options.map((opt, i) => `
+        <button class="quiz-option" onclick="answerQuiz(${i})">${opt}</button>
+      `).join('')}
+    </div>
+    <button class="quiz-next" id="q-next" onclick="nextQuestion()">
+      ${quizIndex < quizData.length - 1 ? 'Next Question →' : 'See Results →'}
+    </button>
+  `;
+}
+
+function answerQuiz(selected) {
+  if (quizAnswered) return;
+  quizAnswered = true;
+  const q = quizData[quizIndex];
+  const buttons = document.querySelectorAll('.quiz-option');
+  buttons.forEach((btn, i) => {
+    btn.classList.add('disabled');
+    if (i === q.answer) btn.classList.add('correct');
+    else if (i === selected) btn.classList.add('wrong');
+  });
+  if (selected === q.answer) quizScore++;
+  document.getElementById('q-next').classList.add('visible');
+}
+
+function nextQuestion() {
+  quizIndex++;
+  if (quizIndex >= quizData.length) {
+    showResults();
+  } else {
+    showQuestion();
+  }
+}
+
+function showResults() {
+  document.getElementById('q-prog').style.width = '100%';
+  document.getElementById('q-body').style.display = 'none';
+  const pct = Math.round((quizScore / quizData.length) * 100);
+  let emoji, msg;
+  if (pct === 100) { emoji = '🏆'; msg = 'Perfect score! You\'re a true art connoisseur.'; }
+  else if (pct >= 71) { emoji = '🎨'; msg = 'Great work! You know your art movements well.'; }
+  else if (pct >= 43) { emoji = '🖼️'; msg = 'Good effort! Keep exploring the movements above.'; }
+  else { emoji = '📚'; msg = 'Keep learning — the gallery above is waiting for you!'; }
+  document.getElementById('r-emoji').textContent = emoji;
+  document.getElementById('r-score').textContent = `${quizScore} / ${quizData.length}`;
+  document.getElementById('r-msg').textContent = msg;
+  document.getElementById('quiz-results').classList.add('visible');
+}
+
+// ── INIT ──
+buildMovementNav();
+renderMovement();
+</script>
+</body>
+</html>
